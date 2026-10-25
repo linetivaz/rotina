@@ -1,7 +1,8 @@
-// Cole aqui a configuração do seu projeto Firebase (passo 3 do LEIA-ME).
+// Configuração pública do projeto Firebase "minha-rotina-6572a".
+// Não é senha: quem protege os dados são as regras do Firestore (firestore.rules).
 window.FIREBASE_CONFIG = {
-  apiKey: "COLE_AQUI",
-  authDomain: "COLE_AQUI.firebaseapp.com",
-  projectId: "COLE_AQUI",
-  appId: "COLE_AQUI"
+  apiKey: "AIzaSyAkp-GJ8rQmp-gTt0IJuwmNF2GBOHD9yPA",
+  authDomain: "minha-rotina-6572a.firebaseapp.com",
+  projectId: "minha-rotina-6572a",
+  appId: "1:93716216005:web:ee2fa9db47d20b631b18ac"
 };
