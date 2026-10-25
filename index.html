@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fdfefd">
+<link rel="manifest" href="manifest.json">
+<title>Minha Rotina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+html { color-scheme: light } body { margin: 0 } [hidden] { display: none !important } img { max-width: 100% }
+/* Layout: one column painel, abas no topo; "Hoje" é a tela principal, o resto é apoio. */
+:root {
+  --bg: #fdfefd;
+  --surface: #ffffff;
+  --line: #edf1ef;
+  --fg: #2e3a36;
+  --muted: #7d8a85;
+  --accent: #3f9c88;
+  --accent-soft: #e6f4ef;
+  --sun: #e9b44c;
+  --sun-soft: #fdf6e6;
+  --rose-soft: #fbf0f1;
+  --sky-soft: #eef4fb;
+  --warn: #c0684f;
+  --cell0: #edf2ef;
+  --cell1: #a9d9cb;
+  --cell2: #5fb3a0;
+  color-scheme: light;
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.45 }
+.wrap { max-width: 980px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 48px; display: grid; gap: 18px }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px }
+h1 { font-family: var(--display); font-weight: 500; font-size: 28px; margin: 0; letter-spacing: -0.01em }
+h2 { font-family: var(--display); font-weight: 500; font-size: 17px; margin: 0; text-wrap: balance }
+.sub { color: var(--muted); font-size: 13px }
+nav.tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px }
+nav.tabs button { font: 500 14px var(--body); border: 1px solid transparent; background: var(--surface); color: var(--fg); padding: 8px 14px; border-radius: 999px; cursor: pointer; white-space: nowrap }
+nav.tabs button[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft) }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-shadow: 0 1px 2px rgba(40,70,60,.04); display: grid; gap: 12px; align-content: start; min-width: 0 }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600 }
+
+input[type=text], textarea, select { font: inherit; color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 6px 8px; width: 100%; min-width: 0 }
+input[type=text]:hover, textarea:hover { border-color: var(--line) }
+input[type=text]:focus, textarea:focus, select:focus { border-color: var(--accent); background: var(--bg) }
+textarea { resize: vertical; min-height: 70px; border-color: var(--line) }
+select { border-color: var(--line); background: var(--surface); width: auto }
+::placeholder { color: var(--muted); opacity: .7 }
+
+.btn { font: 600 13px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 6px 12px; border-radius: 8px; cursor: pointer }
+.btn.primary { background: var(--accent-soft); border-color: var(--accent-soft); color: var(--accent) }
+.btn.ghost { border-color: transparent; color: var(--muted) }
+.btn:hover { border-color: var(--accent) }
+
+.check { appearance: none; width: 22px; height: 22px; border: 1.5px solid var(--cell1); border-radius: 7px; cursor: pointer; flex: none; display: grid; place-items: center; margin: 0; background: var(--surface) }
+.check:checked { background: var(--accent); border-color: var(--accent) }
+.check:checked::after { content: ""; width: 6px; height: 11px; border: solid var(--surface); border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg) }
+
+.row { display: flex; align-items: center; gap: 10px; min-width: 0 }
+.row > input[type=text] { flex: 1 }
+.done input[type=text] { text-decoration: line-through; color: var(--muted) }
+
+.focos { background: var(--sun-soft); border-radius: 14px; padding: 14px 16px; display: grid; gap: 6px }
+.focos ol { margin: 0; padding-left: 20px; display: grid; gap: 2px }
+.rule { font-family: var(--display); font-size: 15px; color: var(--muted) }
+
+.habit { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 12px; background: #f5f9f7 }
+.habit .name { flex: 1; min-width: 0 }
+.habit .obj { font-size: 12px; color: var(--muted) }
+.chip { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums }
+.chip.warn { background: var(--sun-soft); color: var(--warn) }
+
+.blocks { display: grid; gap: 8px }
+.block { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px }
+.block .label { margin: 0 }
+
+.tablewrap { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums }
+th, td { padding: 6px 4px; text-align: center; border-bottom: 1px solid var(--line) }
+th { font-size: 12px; color: var(--muted); font-weight: 600 }
+th.today { color: var(--accent) }
+td.hname, th.hname { text-align: left; min-width: 150px }
+td .check { margin: 0 auto }
+
+.strip { display: grid; grid-template-columns: repeat(35, 1fr); gap: 3px; max-width: 520px }
+.strip i { aspect-ratio: 1; border-radius: 3px; background: var(--cell0); max-width: 100% }
+.strip i.on { background: var(--cell2) }
+.strip i.future { background: transparent; border: 1px dashed var(--line) }
+.hrow { display: grid; gap: 6px; padding-block: 10px; border-bottom: 1px solid var(--line) }
+.hrow:last-child { border-bottom: 0 }
+.hrow .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.hrow .top input { flex: 1; min-width: 140px; font-weight: 600 }
+
+.week { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px }
+.day { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 6px; min-width: 0 }
+.day.is-today { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) }
+.day h3 { margin: 0; font: 600 14px var(--display); display: flex; justify-content: space-between }
+.weeknav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+
+.cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px }
+.cat { border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 4px; align-content: start; min-width: 0 }
+.cat h3 { margin: 0 0 4px; font: 600 14px var(--display); display: flex; justify-content: space-between }
+.item { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.item span { flex: 1; min-width: 0; overflow-wrap: anywhere }
+.item.done span { text-decoration: line-through; color: var(--muted) }
+.star { border: 0; background: none; cursor: pointer; font-size: 16px; color: var(--line); padding: 0 2px }
+.star.on { color: var(--sun) }
+.x { border: 0; background: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 0 4px }
+.addrow { display: flex; gap: 8px; flex-wrap: wrap }
+.addrow input { flex: 1; min-width: 160px; border-color: var(--line) }
+
+.stat { display: flex; gap: 20px; flex-wrap: wrap }
+.stat div { display: grid }
+.stat b { font: 500 28px var(--display); font-variant-numeric: tabular-nums }
+.empty { color: var(--muted); font-size: 14px; padding: 8px 0 }
+.journal { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start }
+.jcard { border-radius: 16px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0 }
+.jcard.manha { background: var(--sun-soft) } .jcard.noite { background: var(--sky-soft) } .jcard.dia { background: var(--rose-soft) }
+.jcard h3 { margin: 0; font: 500 15px var(--display) }
+.jcard .q { font-size: 13px; color: var(--muted); margin-top: 6px }
+.jcard input[type=text], .jcard textarea { background: var(--surface); border-color: transparent }
+.gate { min-height: 100vh; display: grid; place-items: center; padding-inline: 16px }
+.gatebox { max-width: 360px; display: grid; gap: 14px; text-align: center }
+.btn.big { font-size: 16px; padding: 12px 18px }
+.casa code { font: 600 18px ui-monospace, monospace; letter-spacing: .08em; background: var(--accent-soft); color: var(--accent); padding: 4px 10px; border-radius: 8px }
+.jcard .n { width: 16px; color: var(--muted); font-size: 12px; flex: none }
+footer { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px }
+@media (prefers-reduced-motion: no-preference) { .check { transition: background .12s } }
+</style>
+
+</head>
+<body>
+<div class="gate" id="gate" hidden>
+  <div class="gatebox">
+    <h1>Minha Rotina</h1>
+    <p class="sub">Entre com sua conta Google para ver sua rotina no celular e no computador.</p>
+    <button class="btn primary big" id="login">Entrar com Google</button>
+    <p class="sub" id="gate-msg"></p>
+    <a class="sub" href="criancas.html">Abrir a rotina das crianças (Meu Dia)</a>
+  </div>
+</div>
+<div class="wrap" id="app">
+  <header class="top">
+    <div>
+      <h1>Minha Rotina</h1>
+      <div class="sub" id="today-label"></div>
+    </div>
+    <div class="rule">Consistência vence intensidade. Nunca falhe dois dias seguidos.</div>
+  </header>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-tab="hoje">Hoje</button>
+    <button role="tab" data-tab="habitos">Hábitos</button>
+    <button role="tab" data-tab="semana">Semana</button>
+    <button role="tab" data-tab="comida">Cardápio e compras</button>
+    <button role="tab" data-tab="revisao">Revisão</button>
+  </nav>
+  <main id="view"></main>
+  <footer><span id="savestate">Carregando…</span><span><span id="who"></span> <button class="btn ghost" id="logout">Sair</button></span></footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+const DIAS = ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+const CURTO = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+const PERIODOS = [["manha","Manhã"],["tarde","Tarde"],["noite","Noite"]];
+const CATS = ["Hortifruti","Açougue","Laticínios","Mercearia","Padaria","Limpeza","Higiene","Outros"];
+const LSKEY = "minha-rotina-v1";
+
+const EMPTY = () => ({ config: { objetivos: [], habitos: [] }, compras: { itens: [] }, dias: {}, semanas: {}, revisoes: {}, cardapio: {} });
+let S = EMPTY(), P = null, CASA = null; // P = users/<uid>; CASA = casas/<código>
+let db = null, tab = "hoje", weekOffset = 0, revOffset = -1, needsRender = false;
+
+/* ---------- datas ---------- */
+const pad = n => String(n).padStart(2, "0");
+const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x };
+const dow = d => (d.getDay() + 6) % 7;
+const monday = d => { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate()); return addDays(x, -dow(x)) };
+const TODAY = new Date(); const TODAYK = keyOf(TODAY);
+const wkKey = off => keyOf(addDays(monday(TODAY), off * 7));
+const fmtDay = d => d.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+/* ---------- dados ---------- */
+const dia = k => { const d = S.dias[k] ||= { prio: [{t:"",ok:false},{t:"",ok:false},{t:"",ok:false}], hab: {}, nota: "" };
+  d.diario ||= {}; for (const f of ["grato","fantastico","maravilhas"]) d.diario[f] ||= ["","",""]; return d };
+const semana = k => { const s = S.semanas[k] ||= {}; s.blocos ||= {}; return s };
+const card = k => { const c = S.cardapio[k] ||= {}; c.dias ||= {}; return c.dias };
+const revisao = k => S.revisoes[k] ||= { funcionou: "", travou: "", focos: ["","",""] };
+const objNome = id => S.config.objetivos.find(o => o.id === id)?.nome || "";
+
+// Hábitos, diário, semana e revisão são de cada pessoa; cardápio e compras são da casa.
+function pathFor(kind, key) {
+  if (kind === "config") return P;
+  if (kind === "compras") return `${CASA}/compras/lista`;
+  if (kind === "cardapio") return `${CASA}/cardapio/${key}`;
+  return `${P}/${kind}/${key}`;
+}
+function getObj(kind, key) { return kind === "config" || kind === "compras" ? S[kind] : S[kind][key] }
+
+const timers = {};
+function save(kind, key) {
+  const p = pathFor(kind, key);
+  clearTimeout(timers[p]);
+  timers[p] = setTimeout(() => flush(kind, key, p), 500);
+}
+const writing = {};
+async function flush(kind, key, p) {
+  if (!db || !P) return;
+  if (writing[p]) { save(kind, key); return }
+  writing[p] = true;
+  try { await db.doc(p).set(JSON.parse(JSON.stringify(getObj(kind, key))), kind === "config" ? { merge: true } : {}); setSaved("Salvo") }
+  catch (e) { setSaved(e?.code === "permission-denied" ? "Sem permissão para salvar aqui" : "Não consegui salvar. Confira a conexão e tente de novo.") }
+  writing[p] = false;
+}
+function setSaved(t) { document.getElementById("savestate").textContent = t }
+
+function applyDoc(kind, d) {
+  if (d.metadata?.hasPendingWrites) return;
+  const data = JSON.parse(JSON.stringify(d.data() || {}));
+  if (kind === "compras") S.compras = { itens: [], ...data };
+  else if (kind === "config") S.config = { objetivos: [], habitos: [], ...data };
+  else S[kind][d.id] = data;
+}
+function requestRender() {
+  const a = document.activeElement;
+  if (a && (a.tagName === "INPUT" && a.type === "text" || a.tagName === "TEXTAREA")) { needsRender = true; return }
+  render();
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (needsRender) { needsRender = false; requestRender() } }, 0));
+
+/* ---------- cálculos ---------- */
+function streak(hid) {
+  let n = 0, d = new Date(TODAY);
+  if (!dia(keyOf(d)).hab[hid]) d = addDays(d, -1);
+  while (S.dias[keyOf(d)]?.hab?.[hid]) { n++; d = addDays(d, -1) }
+  return n;
+}
+function missedYesterday(hid) { return !S.dias[keyOf(addDays(TODAY, -1))]?.hab?.[hid] && !S.dias[TODAYK]?.hab?.[hid] && Object.values(S.dias).some(x => x?.hab?.[hid]) }
+function weekStats(off) {
+  const m = addDays(monday(TODAY), off * 7), H = S.config.habitos;
+  let hDone = 0, hTot = 0, pDone = 0, pTot = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = addDays(m, i); if (d > TODAY) break;
+    const x = S.dias[keyOf(d)];
+    hTot += H.length; hDone += H.filter(h => x?.hab?.[h.id]).length;
+    (x?.prio || []).forEach(p => { if (p.t) { pTot++; if (p.ok) pDone++ } });
+  }
+  return { hPct: hTot ? Math.round(hDone / hTot * 100) : 0, pDone, pTot };
+}
+
+/* ---------- views ---------- */
+function vHoje() {
+  const d = dia(TODAYK), wk = semana(wkKey(0)), cd = card(wkKey(0)), di = dow(TODAY);
+  const focos = (S.revisoes[wkKey(-1)]?.focos || []).filter(Boolean);
+  const H = S.config.habitos;
+  return `
+  ${focos.length ? `<section class="focos"><span class="label">Focos desta semana</span><ol>${focos.map(f => `<li>${esc(f)}</li>`).join("")}</ol></section>` : ""}
+  <div class="grid2">
+    <section class="panel">
+      <div class="panel-head"><h2>3 prioridades de hoje</h2><span class="sub">Se fizer só isso, o dia valeu.</span></div>
+      ${d.prio.map((p, i) => `<label class="row ${p.ok ? "done" : ""}">
+        <input type="checkbox" class="check" data-act="prio-ok" data-i="${i}" ${p.ok ? "checked" : ""} aria-label="Concluir prioridade ${i+1}">
+        <input type="text" id="prio-${i}" data-act="prio-t" data-i="${i}" value="${esc(p.t)}" placeholder="Prioridade ${i+1}">
+      </label>`).join("")}
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Hábitos de hoje</h2><span class="chip">${H.filter(h => d.hab[h.id]).length}/${H.length}</span></div>
+      ${H.length ? H.map(h => { const s = streak(h.id), risk = missedYesterday(h.id); return `
+        <label class="habit">
+          <input type="checkbox" class="check" data-act="hab" data-day="${TODAYK}" data-h="${h.id}" ${d.hab[h.id] ? "checked" : ""}>
+          <span class="name">${esc(h.nome)}${h.obj ? `<br><span class="obj">${esc(objNome(h.obj))}</span>` : ""}</span>
+          ${risk ? `<span class="chip warn">Não falhe hoje</span>` : `<span class="chip">${s} ${s === 1 ? "dia" : "dias"}</span>`}
+        </label>` }).join("") : `<p class="empty">Nenhum hábito ainda. Adicione na aba Hábitos.</p>`}
+    </section>
+    <section class="panel">
+      <div class="panel-head"><h2>Plano de hoje</h2><button class="btn ghost" data-go="semana">Editar semana</button></div>
+      <div class="blocks">${PERIODOS.map(([k, n]) => `<div class="block"><span class="label">${n}</span><span>${esc(wk.blocos[di]?.[k]) || `<span class="sub">Livre</span>`}</span></div>`).join("")}</div>
+      <span class="label">Comida</span>
+      <div class="blocks">${[["almoco","Almoço"],["janta","Janta"]].map(([k, n]) => `<div class="block"><span class="label">${n}</span><span>${esc(cd[di]?.[k]) || `<span class="sub">Não planejado</span>`}</span></div>`).join("")}</div>
+    </section>
+  </div>
+  <section class="panel" style="margin-top:16px">
+    <div class="panel-head"><h2>Diário</h2><span class="sub">Manhã leva 3 minutos. Noite também.</span></div>
+    <div class="journal">
+      <div class="jcard manha"><h3>De manhã</h3>
+        <span class="q">Hoje agradeço por…</span>${list3("grato", "grat")}
+        <span class="q">O que tornaria o dia de hoje fantástico?</span>${list3("fantastico", "fant")}
+        <span class="q">Afirmações diárias: Eu sou…</span>
+        <textarea id="dj-afirm" data-act="dj" data-f="afirmacao" placeholder="Eu sou capaz, constante, …">${esc(d.diario.afirmacao)}</textarea>
+      </div>
+      <div class="jcard noite"><h3>À noite</h3>
+        <span class="q">Três coisas maravilhosas que aconteceram hoje</span>${list3("maravilhas", "mar")}
+        <span class="q">Como poderia ter tornado o dia melhor?</span>
+        <textarea id="dj-melhor" data-act="dj" data-f="melhor" placeholder="Sem culpa, só ajuste para amanhã.">${esc(d.diario.melhor)}</textarea>
+      </div>
+      <div class="jcard dia"><h3>Como foi o dia</h3>
+        <textarea id="nota" data-act="nota" style="min-height:150px" placeholder="Uma ou duas linhas: o que deu certo, o que atrapalhou.">${esc(d.nota)}</textarea>
+      </div>
+    </div>
+  </section>`;
+  function list3(f, idp) { return d.diario[f].map((v, i) => `<div class="row"><span class="n">${i+1}</span><input type="text" id="dj-${idp}-${i}" data-act="dj" data-f="${f}" data-i="${i}" value="${esc(v)}"></div>`).join("") }
+}
+
+function vHabitos() {
+  const H = S.config.habitos, m = monday(TODAY), O = S.config.objetivos;
+  const days = [...Array(7)].map((_, i) => addDays(m, i));
+  const start = addDays(m, -28);
+  return `<div class="grid2" style="grid-template-columns:1fr">
+  <section class="panel">
+    <div class="panel-head"><h2>Esta semana</h2><span class="sub">${fmtDay(days[0])} a ${fmtDay(days[6])}</span></div>
+    ${H.length ? `<div class="tablewrap"><table>
+      <thead><tr><th class="hname">Hábito</th>${days.map((d, i) => `<th class="${keyOf(d) === TODAYK ? "today" : ""}">${CURTO[i]}</th>`).join("")}</tr></thead>
+      <tbody>${H.map(h => `<tr><td class="hname">${esc(h.nome)}</td>${days.map(d => { const k = keyOf(d); return `<td><input type="checkbox" class="check" data-act="hab" data-day="${k}" data-h="${h.id}" ${S.dias[k]?.hab?.[h.id] ? "checked" : ""} ${d > TODAY ? "disabled" : ""} aria-label="${esc(h.nome)} em ${fmtDay(d)}"></td>` }).join("")}</tr>`).join("")}</tbody>
+    </table></div>` : `<p class="empty">Adicione até 5 hábitos abaixo.</p>`}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Seus hábitos e consistência</h2><span class="sub">Últimas 5 semanas</span></div>
+    ${H.map(h => `<div class="hrow">
+      <div class="top">
+        <input type="text" id="hn-${h.id}" data-act="h-nome" data-h="${h.id}" value="${esc(h.nome)}" aria-label="Nome do hábito">
+        <select data-act="h-obj" data-h="${h.id}" aria-label="Objetivo"><option value="">Sem objetivo</option>${O.map(o => `<option value="${o.id}" ${o.id === h.obj ? "selected" : ""}>${esc(o.nome)}</option>`).join("")}</select>
+        <span class="chip">${streak(h.id)} seguidos</span>
+        <button class="x" data-act="h-del" data-h="${h.id}" aria-label="Apagar hábito">×</button>
+      </div>
+      <div class="strip">${[...Array(35)].map((_, i) => { const d = addDays(start, i); return `<i class="${d > TODAY ? "future" : S.dias[keyOf(d)]?.hab?.[h.id] ? "on" : ""}" title="${fmtDay(d)}"></i>` }).join("")}</div>
+    </div>`).join("")}
+    ${H.length < 5 ? `<form class="addrow" data-form="hab"><input type="text" id="new-hab" name="nome" placeholder="Novo hábito (ex.: ler 10 páginas)"><button class="btn primary">Adicionar</button></form>`
+      : `<p class="sub">Você está no limite de 5 hábitos. Menos hábitos, feitos todo dia, rendem mais.</p>`}
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Objetivos</h2><span class="sub">Cada hábito deve servir a um destes.</span></div>
+    ${O.map(o => `<div class="row"><input type="text" id="on-${o.id}" data-act="o-nome" data-o="${o.id}" value="${esc(o.nome)}" aria-label="Objetivo"><span class="sub">${H.filter(h => h.obj === o.id).length} hábitos</span><button class="x" data-act="o-del" data-o="${o.id}" aria-label="Apagar objetivo">×</button></div>`).join("")}
+    ${O.length < 3 ? `<form class="addrow" data-form="obj"><input type="text" id="new-obj" name="nome" placeholder="Novo objetivo"><button class="btn">Adicionar</button></form>` : ""}
+  </section></div>`;
+}
+
+function weekNav(label) {
+  const m = addDays(monday(TODAY), weekOffset * 7);
+  return `<div class="weeknav"><button class="btn" data-act="wk" data-d="-1" aria-label="Semana anterior">‹</button>
+    <strong>${weekOffset === 0 ? "Esta semana" : weekOffset === 1 ? "Próxima semana" : weekOffset === -1 ? "Semana passada" : "Semana de " + fmtDay(m)}</strong>
+    <span class="sub">${fmtDay(m)} a ${fmtDay(addDays(m, 6))}</span>
+    <button class="btn" data-act="wk" data-d="1" aria-label="Próxima semana">›</button>
+    <button class="btn ghost" data-act="copy-prev" data-what="${label}">Copiar da semana anterior</button></div>`;
+}
+function vSemana() {
+  const k = wkKey(weekOffset), w = semana(k), m = addDays(monday(TODAY), weekOffset * 7);
+  return `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Rotina em blocos</h2>${weekNav("blocos")}</div>
+    <p class="sub" style="margin:0">Planeje por período, não por hora. Se um bloco escapar, o resto do dia continua de pé.</p></section>
+  <div class="week">${DIAS.map((n, i) => `<div class="day ${keyOf(addDays(m, i)) === TODAYK ? "is-today" : ""}"><h3>${n}<span class="sub">${fmtDay(addDays(m, i))}</span></h3>
+    ${PERIODOS.map(([p, pn]) => `<div class="block"><span class="label">${pn}</span><input type="text" id="b-${i}-${p}" data-act="bloco" data-i="${i}" data-p="${p}" value="${esc(w.blocos[i]?.[p])}" placeholder="—"></div>`).join("")}
+  </div>`).join("")}</div>`;
+}
+
+function vComida() {
+  const k = wkKey(weekOffset), cd = card(k), it = S.compras.itens;
+  const comprados = it.filter(x => x.ok).length;
+  return `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Cardápio da casa</h2>${weekNav("cardapio")}</div>
+    <div class="tablewrap"><table><thead><tr><th class="hname">Dia</th><th>Almoço</th><th>Janta</th></tr></thead><tbody>
+    ${DIAS.map((n, i) => `<tr><td class="hname">${n}</td>${["almoco","janta"].map(r => `<td><input type="text" id="c-${i}-${r}" data-act="cardapio" data-i="${i}" data-r="${r}" value="${esc(cd[i]?.[r])}" placeholder="—"></td>`).join("")}</tr>`).join("")}
+    </tbody></table></div></section>
+  <section class="panel">
+    <div class="panel-head"><h2>Lista de compras da casa</h2><span class="chip">${comprados}/${it.length} no carrinho</span></div>
+    <form class="addrow" data-form="item"><input type="text" id="new-item" name="nome" placeholder="Adicionar item"><select name="cat" id="new-cat" aria-label="Categoria">${CATS.map(c => `<option>${c}</option>`).join("")}</select><button class="btn primary">Adicionar</button></form>
+    ${it.length ? `<div class="cats">${CATS.filter(c => it.some(x => x.cat === c)).map(c => { const L = it.filter(x => x.cat === c); return `<div class="cat"><h3>${c}<span class="sub">${L.filter(x => x.ok).length}/${L.length}</span></h3>
+      ${L.map(x => `<label class="item ${x.ok ? "done" : ""}"><input type="checkbox" class="check" data-act="i-ok" data-id="${x.id}" ${x.ok ? "checked" : ""}><span>${esc(x.nome)}</span>
+      <button type="button" class="star ${x.fixo ? "on" : ""}" data-act="i-fixo" data-id="${x.id}" title="${x.fixo ? "Item fixo: volta para a lista" : "Marcar como fixo"}" aria-label="Item fixo">★</button>
+      <button type="button" class="x" data-act="i-del" data-id="${x.id}" aria-label="Remover">×</button></label>`).join("")}</div>` }).join("")}</div>`
+      : `<p class="empty">Lista vazia. Itens com ★ são fixos e voltam sozinhos depois de cada compra.</p>`}
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap"><span class="sub">★ = item fixo, volta para a lista depois da compra.</span><button class="btn" data-act="finish">Finalizar compra</button></div>
+  </section>
+  <section class="panel casa" style="margin-top:16px">
+    <h2>Nossa casa</h2>
+    <p class="sub" style="margin:0">Cardápio e compras são divididos com quem estiver na mesma casa. Para sua noiva entrar, mande este código para ela digitar aqui:</p>
+    <div><code>${esc((CASA || "").split("/")[1] || "")}</code></div>
+    <form class="addrow" data-form="casa"><input type="text" id="casa-cod" name="nome" placeholder="Código de outra casa" autocapitalize="characters"><button class="btn">Entrar nessa casa</button></form>
+    <span class="sub" id="casa-msg"></span>
+  </section>`;
+}
+
+function vRevisao() {
+  const k = wkKey(revOffset), r = revisao(k), st = weekStats(revOffset), m = addDays(monday(TODAY), revOffset * 7);
+  return `<div class="grid2" style="grid-template-columns:1fr">
+  <section class="panel">
+    <div class="panel-head"><h2>Revisão de domingo</h2>
+      <div class="weeknav"><button class="btn" data-act="rev" data-d="-1" aria-label="Semana anterior">‹</button><strong>${revOffset === 0 ? "Esta semana" : revOffset === -1 ? "Semana passada" : "Semana de " + fmtDay(m)}</strong><span class="sub">${fmtDay(m)} a ${fmtDay(addDays(m, 6))}</span><button class="btn" data-act="rev" data-d="1" ${revOffset >= 0 ? "disabled" : ""} aria-label="Próxima semana">›</button></div></div>
+    <p class="sub" style="margin:0">15 minutos, de preferência no domingo à noite.</p>
+    <div class="stat"><div><span class="label">Hábitos cumpridos</span><b>${st.hPct}%</b></div><div><span class="label">Prioridades feitas</span><b>${st.pDone}/${st.pTot}</b></div></div>
+  </section>
+  <div class="grid2">
+    <section class="panel"><h2>O que funcionou?</h2><textarea id="rv-f" data-act="rev-t" data-f="funcionou" placeholder="O que eu quero repetir">${esc(r.funcionou)}</textarea></section>
+    <section class="panel"><h2>O que travou?</h2><textarea id="rv-t" data-act="rev-t" data-f="travou" placeholder="O que atrapalhou e o que muda na próxima semana">${esc(r.travou)}</textarea></section>
+  </div>
+  <section class="panel"><div class="panel-head"><h2>3 focos para a semana seguinte</h2><span class="sub">Aparecem no topo da aba Hoje.</span></div>
+    ${r.focos.map((f, i) => `<div class="row"><span class="label">${i+1}</span><input type="text" id="rv-${i}" data-act="rev-foco" data-i="${i}" value="${esc(f)}" placeholder="Foco ${i+1}"></div>`).join("")}
+  </section></div>`;
+}
+
+const VIEWS = { hoje: vHoje, habitos: vHabitos, semana: vSemana, comida: vComida, revisao: vRevisao };
+function render() {
+  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-selected", b.dataset.tab === tab));
+  document.getElementById("view").innerHTML = VIEWS[tab]();
+}
+function go(t) { if (!VIEWS[t]) return; tab = t; weekOffset = 0; try { history.replaceState(null, "", "#" + t) } catch (e) {} render() }
+
+/* ---------- eventos ---------- */
+document.getElementById("tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) go(b.dataset.tab) });
+
+document.addEventListener("input", e => {
+  const t = e.target, a = t.dataset.act; if (!a) return;
+  const v = t.value, i = +t.dataset.i;
+  if (a === "prio-t") { dia(TODAYK).prio[i].t = v; save("dias", TODAYK) }
+  else if (a === "nota") { dia(TODAYK).nota = v; save("dias", TODAYK) }
+  else if (a === "dj") { const dj = dia(TODAYK).diario, f = t.dataset.f; if (t.dataset.i !== undefined) dj[f][i] = v; else dj[f] = v; save("dias", TODAYK) }
+  else if (a === "h-nome") { S.config.habitos.find(h => h.id === t.dataset.h).nome = v; save("config") }
+  else if (a === "o-nome") { S.config.objetivos.find(o => o.id === t.dataset.o).nome = v; save("config") }
+  else if (a === "bloco") { const k = wkKey(weekOffset); (semana(k).blocos[i] ||= {})[t.dataset.p] = v; save("semanas", k) }
+  else if (a === "cardapio") { const k = wkKey(weekOffset); (card(k)[i] ||= {})[t.dataset.r] = v; save("cardapio", k) }
+  else if (a === "rev-t") { const k = wkKey(revOffset); revisao(k)[t.dataset.f] = v; save("revisoes", k) }
+  else if (a === "rev-foco") { const k = wkKey(revOffset); revisao(k).focos[i] = v; save("revisoes", k) }
+});
+
+document.addEventListener("change", e => {
+  const t = e.target, a = t.dataset.act; if (!a) return;
+  if (a === "prio-ok") { dia(TODAYK).prio[+t.dataset.i].ok = t.checked; save("dias", TODAYK); render() }
+  else if (a === "hab") { const k = t.dataset.day; dia(k).hab[t.dataset.h] = t.checked; save("dias", k); render() }
+  else if (a === "h-obj") { S.config.habitos.find(h => h.id === t.dataset.h).obj = t.value; save("config"); render() }
+  else if (a === "i-ok") { S.compras.itens.find(x => x.id === t.dataset.id).ok = t.checked; save("compras"); render() }
+});
+
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g) return go(g.dataset.go);
+  const t = e.target.closest("button[data-act]"); if (!t) return;
+  const a = t.dataset.act;
+  if (a === "wk") { weekOffset += +t.dataset.d; render() }
+  else if (a === "rev") { revOffset = Math.min(0, revOffset + +t.dataset.d); render() }
+  else if (a === "h-del") { S.config.habitos = S.config.habitos.filter(h => h.id !== t.dataset.h); save("config"); render() }
+  else if (a === "o-del") { const id = t.dataset.o; S.config.objetivos = S.config.objetivos.filter(o => o.id !== id); S.config.habitos.forEach(h => { if (h.obj === id) h.obj = "" }); save("config"); render() }
+  else if (a === "i-fixo") { e.preventDefault(); const x = S.compras.itens.find(x => x.id === t.dataset.id); x.fixo = !x.fixo; save("compras"); render() }
+  else if (a === "i-del") { e.preventDefault(); S.compras.itens = S.compras.itens.filter(x => x.id !== t.dataset.id); save("compras"); render() }
+  else if (a === "finish") { S.compras.itens = S.compras.itens.filter(x => !x.ok || x.fixo).map(x => ({ ...x, ok: false })); save("compras"); render() }
+  else if (a === "copy-prev") {
+    const f = t.dataset.what, k = wkKey(weekOffset), pk = wkKey(weekOffset - 1);
+    const prev = f === "cardapio" ? S.cardapio[pk]?.dias : S.semanas[pk]?.blocos;
+    if (!prev || !Object.keys(prev).length) { t.textContent = "A semana anterior está vazia"; return }
+    const copy = JSON.parse(JSON.stringify(prev));
+    if (f === "cardapio") { S.cardapio[k] = { dias: copy }; save("cardapio", k) } else { semana(k).blocos = copy; save("semanas", k) }
+    render();
+  }
+});
+
+document.addEventListener("submit", e => {
+  const f = e.target, kind = f.dataset.form; if (!kind) return; e.preventDefault();
+  const nome = f.nome.value.trim(); if (!nome) return;
+  if (kind === "casa") return joinCasa(nome.toUpperCase());
+  if (kind === "hab") S.config.habitos.push({ id: uid(), nome, obj: "" });
+  if (kind === "obj") S.config.objetivos.push({ id: uid(), nome });
+  if (kind === "item") S.compras.itens.push({ id: uid(), nome, cat: f.cat.value, ok: false, fixo: false });
+  save(kind === "item" ? "compras" : "config"); render();
+  const again = document.getElementById(f.querySelector("input").id); again && again.focus();
+});
+
+/* ---------- início ---------- */
+document.getElementById("today-label").textContent = TODAY.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+const h0 = (location.hash || "").slice(1); if (VIEWS[h0]) tab = h0;
+render();
+setSaved("Carregando…");
+
+/* ---------- Firebase: login Google e dados sincronizados ---------- */
+const subs = [];
+const fail = e => setSaved(e?.code === "permission-denied" ? "Sem permissão para ler estes dados." : "Não consegui carregar seus dados. Recarregue a página.");
+const newCode = () => [...crypto.getRandomValues(new Uint8Array(8))].map(b => "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[b % 32]).join("");
+
+async function joinCasa(code) {
+  const msg = document.getElementById("casa-msg");
+  const uid = firebase.auth().currentUser.uid;
+  try {
+    await db.doc(`casas/${code}`).update({ membros: firebase.firestore.FieldValue.arrayUnion(uid) });
+    await db.doc(P).set({ casa: code }, { merge: true });
+    start(firebase.auth().currentUser);
+  } catch (e) { msg.textContent = "Não achei essa casa. Confira o código." }
+}
+
+async function start(u) {
+  subs.splice(0).forEach(f => f());
+  P = `users/${u.uid}`; S = EMPTY();
+  document.getElementById("who").textContent = u.email || "";
+  const me = await db.doc(P).get();
+  let code = me.exists ? me.data().casa : null;
+  if (!code) {
+    code = newCode();
+    await db.doc(`casas/${code}`).set({ membros: [u.uid] });
+    await db.doc(P).set({ casa: code }, { merge: true });
+  }
+  CASA = `casas/${code}`;
+  setSaved("Sincronizado. Hábitos e diário são só seus; cardápio e compras são da casa.");
+  subs.push(db.doc(P).onSnapshot(d => { if (d.exists) applyDoc("config", d); requestRender() }, fail));
+  for (const kind of ["dias", "semanas", "revisoes"])
+    subs.push(db.collection(`${P}/${kind}`).onSnapshot(snap => { snap.docs.forEach(d => applyDoc(kind, d)); requestRender() }, fail));
+  subs.push(db.doc(`${CASA}/compras/lista`).onSnapshot(d => { if (d.exists) applyDoc("compras", d); requestRender() }, fail));
+  subs.push(db.collection(`${CASA}/cardapio`).onSnapshot(snap => { snap.docs.forEach(d => applyDoc("cardapio", d)); requestRender() }, fail));
+}
+
+firebase.initializeApp(window.FIREBASE_CONFIG);
+db = firebase.firestore();
+db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+const provider = new firebase.auth.GoogleAuthProvider();
+document.getElementById("login").onclick = () => firebase.auth().signInWithPopup(provider).catch(e => {
+  if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") firebase.auth().signInWithRedirect(provider);
+  else document.getElementById("gate-msg").textContent = "Não consegui entrar. Tente de novo.";
+});
+document.getElementById("logout").onclick = () => firebase.auth().signOut();
+firebase.auth().onAuthStateChanged(u => {
+  document.getElementById("gate").hidden = !!u;
+  document.getElementById("app").hidden = !u;
+  if (u) start(u).catch(fail); else subs.splice(0).forEach(f => f());
+});
+</script>
+</body>
+</html>

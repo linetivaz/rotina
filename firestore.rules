@@ -1,0 +1,21 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hábitos, diário, semana e revisão: só a própria pessoa.
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    // Casa: quem está na lista de membros. Para entrar, a pessoa só pode se adicionar.
+    match /casas/{casa} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.membros;
+      allow create: if request.auth != null && request.resource.data.membros == [request.auth.uid];
+      allow update: if request.auth != null
+        && request.resource.data.membros.hasAll(resource.data.membros)
+        && request.resource.data.membros.removeAll(resource.data.membros).hasOnly([request.auth.uid]);
+      match /{document=**} {
+        allow read, write: if request.auth != null
+          && request.auth.uid in get(/databases/$(database)/documents/casas/$(casa)).data.membros;
+      }
+    }
+  }
+}
