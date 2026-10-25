@@ -132,6 +132,10 @@ td .check { margin: 0 auto }
 .gatebox { max-width: 360px; display: grid; gap: 14px; text-align: center }
 .btn.big { font-size: 16px; padding: 12px 18px }
 .casa code { font: 600 18px ui-monospace, monospace; letter-spacing: .08em; background: var(--accent-soft); color: var(--accent); padding: 4px 10px; border-radius: 8px }
+.item .chip, .item .sub { flex: none }
+.item.done .chip, .item.done .sub { text-decoration: none }
+.obform { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px }
+.obform input { border-color: var(--line) }
 .jcard .n { width: 16px; color: var(--muted); font-size: 12px; flex: none }
 footer { color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px }
 @media (prefers-reduced-motion: no-preference) { .check { transition: background .12s } }
@@ -178,7 +182,7 @@ const PERIODOS = [["manha","Manhã"],["tarde","Tarde"],["noite","Noite"]];
 const CATS = ["Hortifruti","Açougue","Laticínios","Mercearia","Padaria","Limpeza","Higiene","Outros"];
 const LSKEY = "minha-rotina-v1";
 
-const EMPTY = () => ({ config: { objetivos: [], habitos: [] }, compras: { itens: [] }, dias: {}, semanas: {}, revisoes: {}, cardapio: {} });
+const EMPTY = () => ({ config: { objetivos: [], habitos: [], obrig: [] }, compras: { itens: [] }, casaObrig: { itens: [], feitos: {} }, dias: {}, semanas: {}, revisoes: {}, cardapio: {} });
 let S = EMPTY(), P = null, CASA = null; // P = users/<uid>; CASA = casas/<código>
 let db = null, tab = "hoje", weekOffset = 0, revOffset = -1, needsRender = false;
 
@@ -200,16 +204,28 @@ const dia = k => { const d = S.dias[k] ||= { prio: [{t:"",ok:false},{t:"",ok:fal
 const semana = k => { const s = S.semanas[k] ||= {}; s.blocos ||= {}; return s };
 const card = k => { const c = S.cardapio[k] ||= {}; c.dias ||= {}; return c.dias };
 const revisao = k => S.revisoes[k] ||= { funcionou: "", travou: "", focos: ["","",""] };
+const REPETE = { hoje: null, todo: [0,1,2,3,4,5,6], uteis: [0,1,2,3,4], fds: [5,6] };
+const diasTxt = ds => ds.length === 7 ? "Todo dia" : ds.join() === "0,1,2,3,4" ? "Seg a sex" : ds.join() === "5,6" ? "Fim de semana" : ds.map(i => CURTO[i]).join(", ");
+// Obrigações de um dia: fixas e avulsas, minhas e da casa.
+function obrigDoDia(k) {
+  const di = dow(new Date(k + "T12:00")), d = dia(k), cf = S.casaObrig.feitos?.[k] || {}, mf = d.feitas || {};
+  return [
+    ...(S.config.obrig || []).filter(o => o.dias.includes(di)).map(o => ({ ...o, casa: false, fixa: true, ok: !!mf[o.id] })),
+    ...(d.obrig || []).map(o => ({ ...o, casa: false, fixa: false, ok: !!mf[o.id] })),
+    ...S.casaObrig.itens.filter(o => o.dias ? o.dias.includes(di) : o.data === k).map(o => ({ ...o, casa: true, fixa: !!o.dias, ok: !!cf[o.id] })),
+  ];
+}
 const objNome = id => S.config.objetivos.find(o => o.id === id)?.nome || "";
 
 // Hábitos, diário, semana e revisão são de cada pessoa; cardápio e compras são da casa.
 function pathFor(kind, key) {
   if (kind === "config") return P;
   if (kind === "compras") return `${CASA}/compras/lista`;
+  if (kind === "casaObrig") return `${CASA}/obrigacoes/lista`;
   if (kind === "cardapio") return `${CASA}/cardapio/${key}`;
   return `${P}/${kind}/${key}`;
 }
-function getObj(kind, key) { return kind === "config" || kind === "compras" ? S[kind] : S[kind][key] }
+function getObj(kind, key) { return kind === "config" || kind === "compras" || kind === "casaObrig" ? S[kind] : S[kind][key] }
 
 const timers = {};
 function save(kind, key) {
@@ -232,7 +248,8 @@ function applyDoc(kind, d) {
   if (d.metadata?.hasPendingWrites) return;
   const data = JSON.parse(JSON.stringify(d.data() || {}));
   if (kind === "compras") S.compras = { itens: [], ...data };
-  else if (kind === "config") S.config = { objetivos: [], habitos: [], ...data };
+  else if (kind === "casaObrig") S.casaObrig = { itens: [], feitos: {}, ...data };
+  else if (kind === "config") S.config = { objetivos: [], habitos: [], obrig: [], ...data };
   else S[kind][d.id] = data;
 }
 function requestRender() {
@@ -277,6 +294,7 @@ function vHoje() {
         <input type="text" id="prio-${i}" data-act="prio-t" data-i="${i}" value="${esc(p.t)}" placeholder="Prioridade ${i+1}">
       </label>`).join("")}
     </section>
+    ${vObrig()}
     <section class="panel">
       <div class="panel-head"><h2>Hábitos de hoje</h2><span class="chip">${H.filter(h => d.hab[h.id]).length}/${H.length}</span></div>
       ${H.length ? H.map(h => { const s = streak(h.id), risk = missedYesterday(h.id); return `
@@ -313,6 +331,26 @@ function vHoje() {
     </div>
   </section>`;
   function list3(f, idp) { return d.diario[f].map((v, i) => `<div class="row"><span class="n">${i+1}</span><input type="text" id="dj-${idp}-${i}" data-act="dj" data-f="${f}" data-i="${i}" value="${esc(v)}"></div>`).join("") }
+}
+
+function vObrig() {
+  const L = obrigDoDia(TODAYK);
+  return `<section class="panel">
+    <div class="panel-head"><h2>Obrigações de hoje</h2><span class="chip">${L.filter(o => o.ok).length}/${L.length}</span></div>
+    ${L.length ? L.map(o => `<label class="item ${o.ok ? "done" : ""}">
+      <input type="checkbox" class="check" data-act="ob-ok" data-id="${o.id}" data-casa="${o.casa ? 1 : ""}" ${o.ok ? "checked" : ""}>
+      <span>${esc(o.t)}</span>
+      ${o.casa ? `<span class="chip">Casa</span>` : ""}${o.fixa ? `<span class="sub" title="Repete">↻</span>` : `<button type="button" class="x" data-act="ob-del" data-id="${o.id}" data-casa="${o.casa ? 1 : ""}" aria-label="Remover">×</button>`}
+    </label>`).join("") : `<p class="empty">Nada por hoje. Adicione contas, consultas, tarefas da casa…</p>`}
+    <form class="obform" data-form="obrig">
+      <input type="text" id="new-ob" name="nome" placeholder="Nova obrigação">
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <select name="rep" id="new-ob-rep" aria-label="Repetir"><option value="hoje">Só hoje</option><option value="todo">Todo dia</option><option value="uteis">Seg a sex</option><option value="fds">Fim de semana</option><option value="semanal">Toda ${DIAS[dow(TODAY)].toLowerCase()}</option></select>
+        <select name="dono" id="new-ob-dono" aria-label="De quem"><option value="minha">Minha</option><option value="casa">Da casa</option></select>
+        <button class="btn primary">Adicionar</button>
+      </div>
+    </form>
+  </section>`;
 }
 
 function vHabitos() {
@@ -356,10 +394,17 @@ function weekNav(label) {
     <button class="btn" data-act="wk" data-d="1" aria-label="Próxima semana">›</button>
     <button class="btn ghost" data-act="copy-prev" data-what="${label}">Copiar da semana anterior</button></div>`;
 }
+function vFixas() {
+  const L = [...(S.config.obrig || []).map(o => ({ ...o, casa: false })), ...S.casaObrig.itens.filter(o => o.dias).map(o => ({ ...o, casa: true }))];
+  return `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Obrigações fixas</h2><span class="sub">Aparecem sozinhas na aba Hoje. Para criar, use a aba Hoje.</span></div>
+    ${L.length ? L.map(o => `<div class="item"><span>${esc(o.t)}</span>${o.casa ? `<span class="chip">Casa</span>` : ""}<span class="sub">${diasTxt(o.dias)}</span><button type="button" class="x" data-act="ob-del" data-id="${o.id}" data-casa="${o.casa ? 1 : ""}" aria-label="Apagar">×</button></div>`).join("") : `<p class="empty">Nenhuma obrigação fixa ainda.</p>`}
+  </section>`;
+}
 function vSemana() {
   const k = wkKey(weekOffset), w = semana(k), m = addDays(monday(TODAY), weekOffset * 7);
   return `<section class="panel" style="margin-bottom:16px"><div class="panel-head"><h2>Rotina em blocos</h2>${weekNav("blocos")}</div>
     <p class="sub" style="margin:0">Planeje por período, não por hora. Se um bloco escapar, o resto do dia continua de pé.</p></section>
+  ${vFixas()}
   <div class="week">${DIAS.map((n, i) => `<div class="day ${keyOf(addDays(m, i)) === TODAYK ? "is-today" : ""}"><h3>${n}<span class="sub">${fmtDay(addDays(m, i))}</span></h3>
     ${PERIODOS.map(([p, pn]) => `<div class="block"><span class="label">${pn}</span><input type="text" id="b-${i}-${p}" data-act="bloco" data-i="${i}" data-p="${p}" value="${esc(w.blocos[i]?.[p])}" placeholder="—"></div>`).join("")}
   </div>`).join("")}</div>`;
@@ -438,6 +483,13 @@ document.addEventListener("change", e => {
   if (a === "prio-ok") { dia(TODAYK).prio[+t.dataset.i].ok = t.checked; save("dias", TODAYK); render() }
   else if (a === "hab") { const k = t.dataset.day; dia(k).hab[t.dataset.h] = t.checked; save("dias", k); render() }
   else if (a === "h-obj") { S.config.habitos.find(h => h.id === t.dataset.h).obj = t.value; save("config"); render() }
+  else if (a === "ob-ok") {
+    const id = t.dataset.id;
+    if (t.dataset.casa) { const F = S.casaObrig.feitos ||= {}; (F[TODAYK] ||= {})[id] = t.checked;
+      const lim = keyOf(addDays(TODAY, -14)); for (const k in F) if (k < lim) delete F[k]; save("casaObrig") }
+    else { (dia(TODAYK).feitas ||= {})[id] = t.checked; save("dias", TODAYK) }
+    render();
+  }
   else if (a === "i-ok") { S.compras.itens.find(x => x.id === t.dataset.id).ok = t.checked; save("compras"); render() }
 });
 
@@ -450,6 +502,13 @@ document.addEventListener("click", e => {
   else if (a === "h-del") { S.config.habitos = S.config.habitos.filter(h => h.id !== t.dataset.h); save("config"); render() }
   else if (a === "o-del") { const id = t.dataset.o; S.config.objetivos = S.config.objetivos.filter(o => o.id !== id); S.config.habitos.forEach(h => { if (h.obj === id) h.obj = "" }); save("config"); render() }
   else if (a === "i-fixo") { e.preventDefault(); const x = S.compras.itens.find(x => x.id === t.dataset.id); x.fixo = !x.fixo; save("compras"); render() }
+  else if (a === "ob-del") {
+    e.preventDefault(); const id = t.dataset.id;
+    if (t.dataset.casa) { S.casaObrig.itens = S.casaObrig.itens.filter(o => o.id !== id); save("casaObrig") }
+    else { S.config.obrig = (S.config.obrig || []).filter(o => o.id !== id); save("config");
+      const d = dia(TODAYK); if ((d.obrig || []).some(o => o.id === id)) { d.obrig = d.obrig.filter(o => o.id !== id); save("dias", TODAYK) } }
+    render();
+  }
   else if (a === "i-del") { e.preventDefault(); S.compras.itens = S.compras.itens.filter(x => x.id !== t.dataset.id); save("compras"); render() }
   else if (a === "finish") { S.compras.itens = S.compras.itens.filter(x => !x.ok || x.fixo).map(x => ({ ...x, ok: false })); save("compras"); render() }
   else if (a === "copy-prev") {
@@ -466,6 +525,13 @@ document.addEventListener("submit", e => {
   const f = e.target, kind = f.dataset.form; if (!kind) return; e.preventDefault();
   const nome = f.nome.value.trim(); if (!nome) return;
   if (kind === "casa") return joinCasa(nome.toUpperCase());
+  if (kind === "obrig") {
+    const rep = f.rep.value, dias = rep === "semanal" ? [dow(TODAY)] : REPETE[rep], o = { id: uid(), t: nome };
+    if (f.dono.value === "casa") { S.casaObrig.itens.push(dias ? { ...o, dias } : { ...o, data: TODAYK }); save("casaObrig") }
+    else if (dias) { (S.config.obrig ||= []).push({ ...o, dias }); save("config") }
+    else { (dia(TODAYK).obrig ||= []).push(o); save("dias", TODAYK) }
+    render(); document.getElementById("new-ob")?.focus(); return;
+  }
   if (kind === "hab") S.config.habitos.push({ id: uid(), nome, obj: "" });
   if (kind === "obj") S.config.objetivos.push({ id: uid(), nome });
   if (kind === "item") S.compras.itens.push({ id: uid(), nome, cat: f.cat.value, ok: false, fixo: false });
@@ -511,6 +577,7 @@ async function start(u) {
   for (const kind of ["dias", "semanas", "revisoes"])
     subs.push(db.collection(`${P}/${kind}`).onSnapshot(snap => { snap.docs.forEach(d => applyDoc(kind, d)); requestRender() }, fail));
   subs.push(db.doc(`${CASA}/compras/lista`).onSnapshot(d => { if (d.exists) applyDoc("compras", d); requestRender() }, fail));
+  subs.push(db.doc(`${CASA}/obrigacoes/lista`).onSnapshot(d => { if (d.exists) applyDoc("casaObrig", d); requestRender() }, fail));
   subs.push(db.collection(`${CASA}/cardapio`).onSnapshot(snap => { snap.docs.forEach(d => applyDoc("cardapio", d)); requestRender() }, fail));
 }
 
