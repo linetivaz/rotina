@@ -134,6 +134,15 @@ td .check { margin: 0 auto }
 .casa code { font: 600 18px ui-monospace, monospace; letter-spacing: .08em; background: var(--accent-soft); color: var(--accent); padding: 4px 10px; border-radius: 8px }
 .item .chip, .item .sub { flex: none }
 .item.done .chip, .item.done .sub { text-decoration: none }
+.agua { display: grid; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--line) }
+.copos { display: flex; flex-wrap: wrap; gap: 6px }
+.copo { width: 34px; height: 42px; padding: 2px; border: 0; background: none; cursor: pointer; border-radius: 8px }
+.copo svg { width: 100%; height: 100% }
+.copo .agua-copo { fill: none; stroke: var(--cell1); stroke-width: 1.6; stroke-linejoin: round }
+.copo .agua-liq { fill: transparent; transform-origin: 50% 100%; transform: scaleY(0) }
+.copo.cheio .agua-liq { fill: #7cc4e8; transform: scaleY(1) }
+.copo.cheio .agua-copo { stroke: #4aa3d4 }
+@media (prefers-reduced-motion: no-preference) { .copo .agua-liq { transition: transform .25s ease, fill .25s } }
 .obform { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px }
 .obform input { border-color: var(--line) }
 .jcard .n { width: 16px; color: var(--muted); font-size: 12px; flex: none }
@@ -296,6 +305,7 @@ function vHoje() {
     </section>
     ${vObrig()}
     <section class="panel">
+      ${vAgua()}
       <div class="panel-head"><h2>Hábitos de hoje</h2><span class="chip">${H.filter(h => d.hab[h.id]).length}/${H.length}</span></div>
       ${H.length ? H.map(h => { const s = streak(h.id), risk = missedYesterday(h.id); return `
         <label class="habit">
@@ -333,6 +343,16 @@ function vHoje() {
   function list3(f, idp) { return d.diario[f].map((v, i) => `<div class="row"><span class="n">${i+1}</span><input type="text" id="dj-${idp}-${i}" data-act="dj" data-f="${f}" data-i="${i}" value="${esc(v)}"></div>`).join("") }
 }
 
+// Copos d'água: cada toque enche um copo; tocar no último cheio esvazia.
+function vAgua() {
+  const n = dia(TODAYK).agua || 0, meta = S.config.metaAgua || 8, ml = S.config.copoMl || 250;
+  return `<div class="agua">
+    <div class="panel-head"><h2>Água</h2><span class="chip">${(n * ml / 1000).toLocaleString("pt-BR")} L de ${(meta * ml / 1000).toLocaleString("pt-BR")} L</span></div>
+    <div class="copos">${[...Array(Math.max(meta, n))].map((_, i) => `<button type="button" class="copo ${i < n ? "cheio" : ""}" data-act="agua" data-i="${i}" aria-label="Copo ${i + 1}${i < n ? ", cheio" : ""}">
+      <svg viewBox="0 0 24 30" aria-hidden="true"><path class="agua-liq" d="M4.6 11h14.8l-1.5 15.2a2 2 0 0 1-2 1.8H8.1a2 2 0 0 1-2-1.8z"/><path class="agua-copo" d="M3 3h18l-2.2 23.3a2 2 0 0 1-2 1.7H7.2a2 2 0 0 1-2-1.7z"/></svg></button>`).join("")}</div>
+    <div class="row sub" style="gap:6px;flex-wrap:wrap">Meta: <button type="button" class="btn ghost" data-act="meta-agua" data-d="-1" aria-label="Menos um copo na meta">−</button>${meta} copos de ${ml} ml<button type="button" class="btn ghost" data-act="meta-agua" data-d="1" aria-label="Mais um copo na meta">+</button></div>
+  </div>`;
+}
 function vObrig() {
   const L = obrigDoDia(TODAYK);
   return `<section class="panel">
@@ -502,6 +522,15 @@ document.addEventListener("click", e => {
   else if (a === "h-del") { S.config.habitos = S.config.habitos.filter(h => h.id !== t.dataset.h); save("config"); render() }
   else if (a === "o-del") { const id = t.dataset.o; S.config.objetivos = S.config.objetivos.filter(o => o.id !== id); S.config.habitos.forEach(h => { if (h.obj === id) h.obj = "" }); save("config"); render() }
   else if (a === "i-fixo") { e.preventDefault(); const x = S.compras.itens.find(x => x.id === t.dataset.id); x.fixo = !x.fixo; save("compras"); render() }
+  else if (a === "agua") {
+    const d = dia(TODAYK), i = +t.dataset.i, meta = S.config.metaAgua || 8;
+    d.agua = i < (d.agua || 0) && i === (d.agua || 0) - 1 ? i : i + 1;
+    // Marca sozinho o hábito de água quando bate a meta.
+    const h = S.config.habitos.find(h => /água|agua/i.test(h.nome));
+    if (h) d.hab[h.id] = d.agua >= meta;
+    save("dias", TODAYK); render();
+  }
+  else if (a === "meta-agua") { S.config.metaAgua = Math.min(16, Math.max(1, (S.config.metaAgua || 8) + +t.dataset.d)); save("config"); render() }
   else if (a === "ob-del") {
     e.preventDefault(); const id = t.dataset.id;
     if (t.dataset.casa) { S.casaObrig.itens = S.casaObrig.itens.filter(o => o.id !== id); save("casaObrig") }
